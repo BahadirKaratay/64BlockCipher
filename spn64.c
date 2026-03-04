@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* 4-bit S-Box: 16-entry bijective lookup table */
 static const uint8_t SBOX[16] = {
@@ -59,10 +61,31 @@ uint64_t spn64_encrypt(uint64_t pt, uint64_t master_key) {
     return state;
 }
 
-int main(void) {
-    uint64_t key = 0x133457799BBCDFF1ULL;
-    uint64_t pt  = 0x0123456789ABCDEFULL;
-    uint64_t ct  = spn64_encrypt(pt, key);
+int main(int argc, char *argv[]) {
+    uint64_t key, pt;
+
+    if (argc == 3) {
+        char *end;
+        key = strtoull(argv[1], &end, 16);
+        if (*end != '\0' || strlen(argv[1]) > 16) {
+            fprintf(stderr, "Error: key must be a hex value up to 16 digits\n");
+            return 1;
+        }
+        pt = strtoull(argv[2], &end, 16);
+        if (*end != '\0' || strlen(argv[2]) > 16) {
+            fprintf(stderr, "Error: plaintext must be a hex value up to 16 digits\n");
+            return 1;
+        }
+    } else if (argc == 1) {
+        key = 0x133457799BBCDFF1ULL;
+        pt  = 0x0123456789ABCDEFULL;
+    } else {
+        fprintf(stderr, "Usage: %s [KEY_HEX PLAINTEXT_HEX]\n", argv[0]);
+        fprintf(stderr, "  e.g. %s 133457799BBCDFF1 0123456789ABCDEF\n", argv[0]);
+        return 1;
+    }
+
+    uint64_t ct = spn64_encrypt(pt, key);
 
     printf("Key:        %016llX\n", (unsigned long long)key);
     printf("Plaintext:  %016llX\n", (unsigned long long)pt);
